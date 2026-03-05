@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}Analytics — SmartAttend{% endblock %}
+{% block page_label %}Attendance Analytics{% endblock %}
+
+{% block head %}
+<style>
+.at-risk-row td:first-child { border-left: 2px solid var(--red); }
+.trend-chart { height: 36px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+  <div>
+    <h1><i class="bi bi-graph-up-arrow text-teal me-2"></i>Attendance <span>Analytics</span></h1>
+    <p>Subject: <strong>{{ subject }}</strong> &nbsp;·&nbsp; {{ data|length }} students</p>
+  </div>
+  <a href="{{ back_url }}" class="btn-ghost">
+    <i class="bi bi-arrow-left"></i> Back
+  </a>
+</div>
+
+<!-- ── At Risk Summary ────────────────────────────────────────────────── -->
+{% set at_risk = data | selectattr('at_risk') | list %}
+{% if at_risk %}
+<div class="card mb-4" style="background:rgba(255,71,87,.06); border-color:rgba(255,71,87,.25);">
+  <div class="card-body d-flex align-items-center gap-3">
+    <i class="bi bi-exclamation-triangle-fill fs-4" style="color:var(--red); flex-shrink:0;"></i>
+    <div>
+      <div class="fw-700" style="color:var(--red);">{{ at_risk|length }} Student(s) Below 75% Threshold</div>
+      <div style="font-size:12px; color:var(--text-sec);">
+        {{ at_risk | map(attribute='name') | join(', ') }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Analytics Legend ───────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card" style="background:rgba(0,219,180,.04); border-color:rgba(0,219,180,.15);">
+      <div class="card-body py-3">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-speedometer2 fs-3 text-teal"></i>
+          <div>
+            <div class="fw-700">Velocity Index</div>
+            <div style="font-size:12px; color:var(--text-sec);">This week's attended − last week's. Positive = improving.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card" style="background:rgba(255,71,87,.04); border-color:rgba(255,71,87,.15);">
+      <div class="card-body py-3">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-hourglass-split fs-3" style="color:var(--red);"></i>
+          <div>
+            <div class="fw-700">Risk Countdown</div>
+            <div style="font-size:12px; color:var(--text-sec);">Max lectures student can miss before dropping below 75%.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card" style="background:rgba(0,200,232,.04); border-color:rgba(0,200,232,.15);">
+      <div class="card-body py-3">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-graph-up fs-3 text-cyan"></i>
+          <div>
+            <div class="fw-700">Predicted %</div>
+            <div style="font-size:12px; color:var(--text-sec);">Linear projection of semester-end attendance percentage.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Table ─────────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-table me-2 text-teal"></i>Student Analytics Table</span>
+    <input type="text" id="search-inp" class="form-control" placeholder="Search..."
+           style="width:180px; font-size:12px; padding:4px 10px;" oninput="filterTable()">
+  </div>
+  <div class="card-body p-0">
+    <table class="table-custom" id="ana-table">
+      <thead>
+        <tr>
+          <th>STUDENT</th>
+          <th>TOTAL</th>
+          <th>PRESENT</th>
+          <th>LATE</th>
+          <th>EARLY EXIT</th>
+          <th>ABSENT</th>
+          <th>ATTEND %</th>
+          <th title="Velocity Index">VELOCITY</th>
+          <th title="Risk Countdown">RISK</th>
+          <th title="Predicted semester %">PREDICTED</th>
+          <th>TREND</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in data %}
+        <tr class="analytics-row {% if s.at_risk %}at-risk-row{% endif %}">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {% if s.at_risk %}
+                <i class="bi bi-exclamation-circle-fill" style="color:var(--red); font-size:13px;" title="At Risk"></i>
+              {% else %}
+                <i class="bi bi-check-circle-fill" style="color:var(--green); font-size:13px;"></i>
+              {% endif %}
+              <span class="fw-600">{{ s.name }}</span>
+            </div>
+          </td>
+          <td class="font-mono">{{ s.total }}</td>
+          <td><span class="badge-status bs-present">{{ s.present }}</span></td>
+          <td><span class="badge-status bs-late">{{ s.late }}</span></td>
+          <td><span class="badge-status bs-early">{{ s.early_exit }}</span></td>
+          <td><span class="badge-status bs-absent">{{ s.absent }}</span></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="prog-wrap" style="width:60px; height:5px;">
+                <div class="prog-bar {% if s.percentage < 75 %}danger{% endif %}"
+                     style="width:{{ s.percentage }}%"></div>
+              </div>
+              <span class="font-mono fw-700"
+                    style="color:{% if s.percentage >= 75 %}var(--green){% elif s.percentage >= 60 %}var(--amber){% else %}var(--red){% endif %};">
+                {{ s.percentage }}%
+              </span>
+            </div>
+          </td>
+          <td>
+            <span class="fw-700 font-mono
+              {% if s.velocity > 0 %}velocity-up{% elif s.velocity < 0 %}velocity-down{% else %}velocity-flat{% endif %}">
+              {% if s.velocity > 0 %}▲{% elif s.velocity < 0 %}▼{% else %}—{% endif %}
+              {{ s.velocity | abs }}
+            </span>
+          </td>
+          <td>
+            <span class="fw-700 font-mono
+              {% if s.risk == 0 %}risk-high{% elif s.risk <= 2 %}risk-mid{% else %}risk-ok{% endif %}"
+                  title="Can miss {{ s.risk }} more lectures">
+              {{ s.risk }}
+            </span>
+          </td>
+          <td>
+            <span class="fw-700 font-mono
+              {% if s.predicted >= s.percentage %}predicted-up{% else %}predicted-down{% endif %}">
+              {{ s.predicted }}%
+              {% if s.predicted > s.percentage %}
+                <i class="bi bi-arrow-up-short"></i>
+              {% elif s.predicted < s.percentage %}
+                <i class="bi bi-arrow-down-short"></i>
+              {% else %}
+                <i class="bi bi-dash"></i>
+              {% endif %}
+            </span>
+          </td>
+          <td style="min-width:90px;">
+            <canvas class="trend-chart" id="trend-{{ loop.index }}"
+                    data-pts="{{ s.trend | tojson }}"></canvas>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="11" class="text-center py-5" style="color:var(--text-muted);">
+            <i class="bi bi-bar-chart-line fs-3 d-block mb-2"></i>
+            No attendance data available
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Subject Overview Chart ─────────────────────────────────────────── -->
+{% if data %}
+<div class="row g-4 mt-2">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-bar-chart me-2 text-teal"></i>Attendance Distribution</div>
+      <div class="card-body">
+        <canvas id="dist-chart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-pie-chart me-2 text-teal"></i>Status Breakdown</div>
+      <div class="card-body">
+        <canvas id="pie-chart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Mini trend sparklines ──────────────────────────────────────────────
+document.querySelectorAll('.trend-chart').forEach(canvas => {
+  const pts = JSON.parse(canvas.dataset.pts || '[]');
+  if (!pts.length) return;
+  const ctx = canvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: pts.map((_,i)=>''),
+      datasets: [{ data: pts, borderColor: '#00dbb4', borderWidth: 1.5,
+                   fill: true, backgroundColor: 'rgba(0,219,180,.08)',
+                   pointRadius: 0, tension: 0.4 }]
+    },
+    options: {
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales:  { x: { display: false }, y: { display: false } },
+      animation: false
+    }
+  });
+});
+
+// ── Distribution chart ─────────────────────────────────────────────────
+{% if data %}
+const distData = {{ data | map(attribute='percentage') | list | tojson }};
+const distNames= {{ data | map(attribute='name') | list | tojson }};
+
+const distCtx = document.getElementById('dist-chart');
+if (distCtx) {
+  new Chart(distCtx.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: distNames,
+      datasets: [{ label: 'Attendance %', data: distData,
+                   backgroundColor: distData.map(v =>
+                     v >= 75 ? 'rgba(46,213,115,.6)' :
+                     v >= 60 ? 'rgba(245,166,35,.6)' :
+                               'rgba(255,71,87,.6)'),
+                   borderRadius: 4 }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color:'#7a9bb5', font:{ size:10 } }, grid:{ color:'rgba(255,255,255,.04)' } },
+        y: { min:0, max:100, ticks:{ color:'#7a9bb5', font:{ size:10 } }, grid:{ color:'rgba(255,255,255,.04)' } }
+      }
+    }
+  });
+}
+
+// ── Pie / Status breakdown ─────────────────────────────────────────────
+const totalPresent = {{ data | sum(attribute='present') }};
+const totalLate    = {{ data | sum(attribute='late') }};
+const totalEarly   = {{ data | sum(attribute='early_exit') }};
+const totalAbsent  = {{ data | sum(attribute='absent') }};
+const pieCtx = document.getElementById('pie-chart');
+if (pieCtx) {
+  new Chart(pieCtx.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Present','Late','Early Exit','Absent'],
+      datasets: [{ data: [totalPresent, totalLate, totalEarly, totalAbsent],
+                   backgroundColor: ['rgba(46,213,115,.7)','rgba(245,166,35,.7)',
+                                     'rgba(0,200,232,.7)','rgba(255,71,87,.7)'],
+                   borderWidth: 0 }]
+    },
+    options: {
+      cutout: '65%',
+      plugins: { legend: { labels: { color:'#7a9bb5', font:{ size:12 } } } }
+    }
+  });
+}
+{% endif %}
+
+function filterTable() {
+  const q = document.getElementById('search-inp').value.toLowerCase();
+  document.querySelectorAll('#ana-table tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

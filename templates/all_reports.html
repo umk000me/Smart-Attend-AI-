@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}All Reports — SmartAttend{% endblock %}
+{% block page_label %}All Attendance Reports{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+  <div>
+    <h1><i class="bi bi-file-bar-graph-fill text-teal me-2"></i>All <span>Reports</span></h1>
+    <p>Complete lecture-wise attendance records across all faculty.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <input type="text" id="search-input" class="form-control" placeholder="Search..."
+           style="width:200px; font-size:12px;" oninput="filterTable()">
+    <select id="status-filter" class="form-select" style="width:140px; font-size:12px;" onchange="filterTable()">
+      <option value="">All Status</option>
+      <option value="active">Active</option>
+      <option value="completed">Completed</option>
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table-custom" id="rep-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>DATE</th>
+          <th>SUBJECT</th>
+          <th>FACULTY</th>
+          <th>START</th>
+          <th>ROOM</th>
+          <th>TOTAL</th>
+          <th>PRESENT</th>
+          <th>ABSENT</th>
+          <th>RATE</th>
+          <th>STATUS</th>
+          <th>ACTION</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lec in lectures %}
+        <tr>
+          <td class="font-mono text-dim">{{ loop.index }}</td>
+          <td class="font-mono" style="font-size:11px;">{{ lec.date }}</td>
+          <td class="fw-600">{{ lec.subject }}</td>
+          <td style="color:var(--text-sec); font-size:12px;">{{ lec.fname }}</td>
+          <td class="font-mono" style="font-size:11px;">{{ lec.start_time }}</td>
+          <td style="color:var(--text-muted); font-size:11px;">{{ lec.room or 'Lab-1' }}</td>
+          <td class="font-mono text-teal">{{ lec.total or 0 }}</td>
+          <td><span class="badge-status bs-present">{{ lec.present or 0 }}</span></td>
+          <td><span class="badge-status bs-absent">{{ lec.absent or 0 }}</span></td>
+          <td>
+            {% if lec.total and lec.total > 0 %}
+            {% set rate = ((lec.total - lec.absent) / lec.total * 100)|round(1) %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="prog-wrap flex-grow-1" style="height:4px; min-width:60px;">
+                <div class="prog-bar {% if rate < 60 %}danger{% endif %}" style="width:{{ rate }}%"></div>
+              </div>
+              <span class="font-mono" style="font-size:11px; color:{% if rate >= 75 %}var(--green){% elif rate >= 60 %}var(--amber){% else %}var(--red){% endif %};">
+                {{ rate }}%
+              </span>
+            </div>
+            {% else %}
+              <span style="color:var(--text-muted);">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge-status {{ 'bs-active' if lec.status=='active' else 'bs-completed' }}">
+              <i class="bi bi-{% if lec.status=='active' %}broadcast{% else %}check2-circle{% endif %}"></i>
+              {{ lec.status|title }}
+            </span>
+          </td>
+          <td>
+            {% if lec.status == 'completed' %}
+            <a href="{{ url_for('attendance_report', lid=lec.id) }}" class="btn-ghost" style="font-size:11px; padding:3px 9px;">
+              <i class="bi bi-eye"></i> View
+            </a>
+            {% else %}
+            <span style="color:var(--text-muted); font-size:11px;">Live</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="12" class="text-center py-5" style="color:var(--text-muted);">
+            <i class="bi bi-folder-x fs-3 d-block mb-2"></i>No lecture records found
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterTable() {
+  const q      = document.getElementById('search-input').value.toLowerCase();
+  const status = document.getElementById('status-filter').value.toLowerCase();
+  document.querySelectorAll('#rep-table tbody tr').forEach(row => {
+    const text   = row.textContent.toLowerCase();
+    const matchQ = !q || text.includes(q);
+    const matchS = !status || text.includes(status);
+    row.style.display = (matchQ && matchS) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

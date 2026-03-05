@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Attendance Report — SmartAttend{% endblock %}
+{% block page_label %}Attendance Report{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+  <div>
+    <h1><i class="bi bi-file-bar-graph-fill text-teal me-2"></i>Attendance <span>Report</span></h1>
+    <p>
+      {{ lecture.subject }} &nbsp;·&nbsp;
+      {{ lecture.date }} &nbsp;·&nbsp;
+      {{ lecture.start_time }}
+      {% if lecture.end_time %} – {{ lecture.end_time }}{% endif %}
+      &nbsp;·&nbsp; {{ lecture.faculty_name }}
+    </p>
+  </div>
+  <a href="{{ url_for('faculty_dashboard') }}" class="btn-ghost">
+    <i class="bi bi-arrow-left"></i> Dashboard
+  </a>
+</div>
+
+<!-- ── Summary Cards ──────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-people-fill"></i></div>
+      <div><div class="stat-val">{{ total }}</div><div class="stat-label">Total</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+      <div><div class="stat-val">{{ present }}</div><div class="stat-label">Present</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon amber"><i class="bi bi-clock"></i></div>
+      <div><div class="stat-val">{{ late }}</div><div class="stat-label">Late</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon cyan"><i class="bi bi-box-arrow-left"></i></div>
+      <div><div class="stat-val">{{ early_exit }}</div><div class="stat-label">Early Exit</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon red"><i class="bi bi-x-circle-fill"></i></div>
+      <div><div class="stat-val">{{ absent }}</div><div class="stat-label">Absent</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon purple"><i class="bi bi-percent"></i></div>
+      <div><div class="stat-val">{{ pct }}%</div><div class="stat-label">Attendance</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Captured Images ────────────────────────────────────────────────── -->
+{% if images.values() | list | select | list %}
+<div class="card mb-4">
+  <div class="card-header">
+    <i class="bi bi-images me-2 text-teal"></i>Captured Images — Face Recognition Proof
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for n, path in images.items() %}
+        {% if path %}
+        <div class="col-md-4">
+          <div class="img-card">
+            <img src="{{ url_for('static', filename=path) }}" alt="Capture {{ n }}">
+            <div class="img-card-foot">
+              <i class="bi bi-camera-fill me-1" style="color:var(--teal);"></i>
+              Capture {{ n }} —
+              {% if n == 1 %}Start of Lecture
+              {% elif n == 2 %}Mid Lecture
+              {% else %}End of Lecture{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Attendance Table ───────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-table me-2 text-teal"></i>Student-wise Attendance</span>
+    <div class="d-flex gap-2">
+      <input type="text" id="search-input" class="form-control" placeholder="Search student..."
+             style="width:200px; font-size:12px; padding:5px 10px;" oninput="filterTable()">
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <table class="table-custom" id="att-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>ROLL NO</th>
+          <th>STUDENT NAME</th>
+          <th>CAP 1</th>
+          <th>CAP 2</th>
+          <th>CAP 3</th>
+          <th>FINAL STATUS</th>
+          <th>FLAGS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="font-mono text-dim">{{ loop.index }}</td>
+          <td class="font-mono text-teal">{{ r.student_roll }}</td>
+          <td class="fw-600">{{ r.student_name }}</td>
+          <td>
+            {% if r.capture1 %}
+              <i class="bi bi-check-circle-fill" style="color:var(--green);"></i>
+            {% else %}
+              <i class="bi bi-x-circle-fill" style="color:var(--red);"></i>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.capture2 %}
+              <i class="bi bi-check-circle-fill" style="color:var(--green);"></i>
+            {% else %}
+              <i class="bi bi-x-circle-fill" style="color:var(--red);"></i>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.capture3 %}
+              <i class="bi bi-check-circle-fill" style="color:var(--green);"></i>
+            {% else %}
+              <i class="bi bi-x-circle-fill" style="color:var(--red);"></i>
+            {% endif %}
+          </td>
+          <td>
+            {% set fs = r.final_status %}
+            <span class="badge-status
+              {% if fs=='Present' %}bs-present
+              {% elif fs=='Late' %}bs-late
+              {% elif fs=='Early Exit' %}bs-early
+              {% else %}bs-absent{% endif %}">
+              <i class="bi bi-
+                {% if fs=='Present' %}check-circle
+                {% elif fs=='Late' %}clock
+                {% elif fs=='Early Exit' %}box-arrow-left
+                {% else %}x-circle{% endif %}"></i>
+              {{ fs }}
+            </span>
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              {% if r.late_flag %}
+                <span class="badge-status bs-late" style="font-size:9.5px; padding:2px 7px;">LATE</span>
+              {% endif %}
+              {% if r.early_exit_flag %}
+                <span class="badge-status bs-early" style="font-size:9.5px; padding:2px 7px;">EARLY</span>
+              {% endif %}
+              {% if r.spoof_flag %}
+                <span class="badge-status bs-spoof" style="font-size:9.5px; padding:2px 7px;">
+                  <i class="bi bi-shield-x"></i> SPOOF
+                </span>
+              {% endif %}
+              {% if not r.late_flag and not r.early_exit_flag and not r.spoof_flag %}
+                <span style="color:var(--text-muted); font-size:11px;">—</span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-5" style="color:var(--text-muted);">
+            No attendance records found for this lecture.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterTable() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  document.querySelectorAll('#att-table tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

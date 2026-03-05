@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Manage Faculty — SmartAttend{% endblock %}
+{% block page_label %}Manage Faculty{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-person-badge-fill text-teal me-2"></i>Manage <span>Faculty</span></h1>
+  <p>Add faculty members, assign subjects and departments.</p>
+</div>
+
+<div class="row g-4">
+  <!-- Add Faculty Form -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-person-plus-fill me-2 text-teal"></i>Add New Faculty
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="add">
+          <div class="mb-3">
+            <label class="form-label">FULL NAME</label>
+            <input type="text" name="name" class="form-control" placeholder="Dr. Firstname Lastname" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">EMAIL ADDRESS</label>
+            <input type="email" name="email" class="form-control" placeholder="faculty@smart.edu" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">PASSWORD</label>
+            <input type="password" name="password" class="form-control" placeholder="Min. 6 characters" required minlength="6">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">PRIMARY SUBJECT</label>
+            <input type="text" name="subject" class="form-control" placeholder="e.g. Machine Learning">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">DEPARTMENT</label>
+            <select name="department" class="form-select">
+              <option>Computer Science</option>
+              <option>Electronics</option>
+              <option>Mechanical</option>
+              <option>Civil</option>
+              <option>Information Technology</option>
+              <option>Mathematics</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-teal w-100 justify-content-center" style="padding:10px;">
+            <i class="bi bi-person-check-fill"></i> Add Faculty
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Assign Subject Card -->
+    <div class="card mt-3">
+      <div class="card-header">
+        <i class="bi bi-book-fill me-2 text-cyan"></i>Assign Subject
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="assign">
+          <div class="mb-3">
+            <label class="form-label">SELECT FACULTY</label>
+            <select name="uid" class="form-select" required>
+              <option value="">— Select Faculty —</option>
+              {% for f in faculty %}
+              <option value="{{ f.id }}">{{ f.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">SUBJECT NAME</label>
+            <input type="text" name="subject" class="form-control" placeholder="e.g. Deep Learning" required>
+          </div>
+          <button type="submit" class="btn-ghost w-100 justify-content-center">
+            <i class="bi bi-bookmark-check-fill"></i> Assign Subject
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Faculty Table -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-table me-2 text-teal"></i>All Faculty</span>
+        <span class="font-mono" style="font-size:11px; color:var(--text-sec);">{{ faculty|length }} members</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>NAME</th>
+              <th>EMAIL</th>
+              <th>SUBJECT</th>
+              <th>DEPT</th>
+              <th>JOINED</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in faculty %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div style="width:30px;height:30px;background:linear-gradient(135deg,var(--teal),var(--cyan));
+                              border-radius:8px;display:flex;align-items:center;justify-content:center;
+                              font-family:'Syne',sans-serif;font-weight:800;font-size:12px;color:#000;flex-shrink:0;">
+                    {{ f.name[0]|upper }}
+                  </div>
+                  <span class="fw-600">{{ f.name }}</span>
+                </div>
+              </td>
+              <td class="font-mono" style="font-size:11px; color:var(--text-sec);">{{ f.email }}</td>
+              <td><span class="badge-status bs-active">{{ f.subject or '—' }}</span></td>
+              <td style="color:var(--text-sec); font-size:12px;">{{ f.department or '—' }}</td>
+              <td class="font-mono" style="font-size:11px; color:var(--text-muted);">{{ f.created_at or '—' }}</td>
+              <td>
+                <form method="POST" onsubmit="return confirm('Remove {{ f.name }}?')" style="display:inline;">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="uid" value="{{ f.id }}">
+                  <button type="submit" class="btn-danger-soft">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-5" style="color:var(--text-muted);">
+                <i class="bi bi-people fs-3 d-block mb-2"></i>No faculty added yet
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Info box -->
+    <div class="card mt-3" style="background:rgba(0,200,232,.04); border-color:rgba(0,200,232,.2);">
+      <div class="card-body py-3">
+        <div class="d-flex gap-3 align-items-start">
+          <i class="bi bi-info-circle-fill text-cyan fs-5 flex-shrink-0 mt-1"></i>
+          <div style="font-size:13px; color:var(--text-sec);">
+            Faculty can log in using their email and password. They can start lectures, view attendance reports, and access analytics for their assigned subject. Password must be shared securely.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

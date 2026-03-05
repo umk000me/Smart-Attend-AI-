@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}Lecture Monitor — SmartAttend{% endblock %}
+{% block page_label %}Live Lecture Monitor{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <div>
+    <h1><i class="bi bi-broadcast text-amber me-2"></i>Live <span>Monitor</span></h1>
+    <p>Subject: <strong>{{ ls.subject }}</strong> &nbsp;|&nbsp; Lecture #{{ lid }}</p>
+  </div>
+  <div class="live-badge">
+    <span class="live-dot"></span> RECORDING IN PROGRESS
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- ── Camera & Controls ───────────────────────────────────────────── -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-camera-video-fill me-2 text-teal"></i>Webcam Feed</span>
+        <span id="status-badge" class="badge-status bs-active">
+          <i class="bi bi-broadcast"></i> Active
+        </span>
+      </div>
+      <div class="card-body p-0">
+        <div class="cam-wrap" id="cam-wrap">
+          <video id="cam-video" autoplay playsinline muted style="width:100%; max-height:380px;"></video>
+          <canvas id="cam-canvas" style="display:none;"></canvas>
+          <div class="cam-overlay" id="cam-overlay">INITIALISING CAMERA...</div>
+          <div class="cam-crosshair"></div>
+        </div>
+      </div>
+      <div class="card-body border-top" style="border-color:var(--border)!important;">
+        <!-- Capture Timeline -->
+        <div class="section-label">CAPTURE PROGRESS</div>
+        <div class="cap-timeline">
+          <div class="cap-node">
+            <div class="cap-circle" id="cap-circle-1">1</div>
+            <div class="cap-label">Start<br><span class="font-mono" style="font-size:10px;">0s</span></div>
+          </div>
+          <div class="cap-line" id="cap-line-1"></div>
+          <div class="cap-node">
+            <div class="cap-circle" id="cap-circle-2">2</div>
+            <div class="cap-label">Mid<br><span class="font-mono" style="font-size:10px;">20s</span></div>
+          </div>
+          <div class="cap-line" id="cap-line-2"></div>
+          <div class="cap-node">
+            <div class="cap-circle" id="cap-circle-3">3</div>
+            <div class="cap-label">End<br><span class="font-mono" style="font-size:10px;">40s</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Countdown -->
+    <div class="card mt-3 text-center py-3" id="countdown-card">
+      <div class="countdown-ring" id="countdown-num">—</div>
+      <div class="countdown-label" id="countdown-label">NEXT CAPTURE IN</div>
+    </div>
+  </div>
+
+  <!-- ── Detection Results ───────────────────────────────────────────── -->
+  <div class="col-lg-5">
+    <!-- Capture results panels -->
+    {% for cap_n in [1, 2, 3] %}
+    <div class="card mb-3" id="cap-result-{{ cap_n }}" style="opacity:0.4; transition:opacity .4s;">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span class="cap-circle" style="width:28px;height:28px;font-size:12px;border-radius:50%;
+              border:1.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;
+              font-family:'Syne',sans-serif;font-weight:800;" id="mini-circle-{{ cap_n }}">{{ cap_n }}</span>
+        Capture {{ cap_n }}
+        <span class="font-mono ms-auto" style="font-size:10px; color:var(--text-muted);">
+          {% if cap_n == 1 %}0s{% elif cap_n == 2 %}20s{% else %}40s{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        <div id="cap-names-{{ cap_n }}" style="min-height:32px;">
+          <span style="color:var(--text-muted); font-size:12px;">Waiting for capture...</span>
+        </div>
+        <div id="cap-img-wrap-{{ cap_n }}" style="display:none; margin-top:10px;">
+          <img id="cap-img-{{ cap_n }}" style="width:100%; border-radius:8px; border:1px solid var(--border);" alt="">
+        </div>
+        <div id="cap-spoof-{{ cap_n }}" style="display:none; margin-top:6px;">
+          <span class="badge-status bs-spoof"><i class="bi bi-shield-exclamation"></i> SPOOF DETECTED</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Elapsed timer -->
+    <div class="card" style="background:rgba(0,0,0,.3);">
+      <div class="card-body d-flex justify-content-between align-items-center py-3">
+        <span style="font-size:12px; color:var(--text-sec);">Elapsed Time</span>
+        <span class="font-mono text-teal fs-5 fw-700" id="elapsed-timer">00:00</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Completion Message ───────────────────────────────────────────── -->
+<div id="complete-banner" style="display:none;" class="card mt-4"
+     style="background:rgba(46,213,115,.08); border-color:rgba(46,213,115,.3);">
+  <div class="card-body text-center py-4">
+    <i class="bi bi-check-circle-fill fs-1" style="color:var(--green);"></i>
+    <h3 class="mt-3" style="font-family:'Syne',sans-serif; color:var(--green);">All 3 Captures Complete!</h3>
+    <p style="color:var(--text-sec);">Attendance is being computed and saved automatically...</p>
+    <div class="d-flex gap-3 justify-content-center mt-3 flex-wrap">
+      <a href="{{ url_for('attendance_report', lid=lid) }}" class="btn-teal" id="report-link" style="pointer-events:none; opacity:.5;">
+        <i class="bi bi-file-bar-graph-fill"></i> View Attendance Report
+      </a>
+      <a href="{{ url_for('faculty_dashboard') }}" class="btn-ghost">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LID           = {{ lid }};
+const SCHEDULE      = {{ schedule | tojson }};   // [0, 20, 40]
+let videoStream     = null;
+let startTime       = Date.now();
+let captured        = new Set();
+let checkInterval   = null;
+let elapsedInterval = null;
+let done            = false;
+
+// ── Init camera ────────────────────────────────────────────────────────
+async function initCamera() {
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { width:1280, height:720, facingMode:'user' },
+      audio: false
+    });
+    const video = document.getElementById('cam-video');
+    video.srcObject = videoStream;
+    document.getElementById('cam-overlay').textContent = 'FACE RECOGNITION ACTIVE';
+  } catch (err) {
+    document.getElementById('cam-overlay').textContent = 'CAM ERROR: ' + err.message;
+    // Continue in fallback (server will use demo mode)
+  }
+}
+
+// ── Capture frame → base64 ─────────────────────────────────────────────
+function captureFrame() {
+  const video  = document.getElementById('cam-video');
+  const canvas = document.getElementById('cam-canvas');
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+// ── Send capture to server ─────────────────────────────────────────────
+async function sendCapture(capNum) {
+  if (captured.has(capNum)) return;
+  captured.add(capNum);
+
+  // Visual feedback — mark as processing
+  const circle = document.getElementById(`cap-circle-${capNum}`);
+  circle.classList.add('active');
+  document.getElementById(`cap-result-${capNum}`).style.opacity = '1';
+
+  const imageB64 = captureFrame();
+
+  try {
+    const resp = await fetch(`/api/lecture/${LID}/capture`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cap_num: capNum, image: imageB64 })
+    });
+    const data = await resp.json();
+
+    if (data.ok) {
+      // Update UI
+      circle.classList.remove('active');
+      circle.classList.add('done');
+      if (capNum < 3) document.getElementById(`cap-line-${capNum}`).classList.add('done');
+
+      // Show detected names
+      const namesDiv = document.getElementById(`cap-names-${capNum}`);
+      if (data.names.length > 0) {
+        namesDiv.innerHTML = data.names
+          .map(n => `<span class="name-pill"><i class="bi bi-person-check"></i>${n}</span>`)
+          .join('');
+      } else {
+        namesDiv.innerHTML = '<span style="color:var(--text-muted); font-size:12px;"><i class="bi bi-person-x me-1"></i>No faces detected</span>';
+      }
+
+      // Show captured image
+      const imgWrap = document.getElementById(`cap-img-wrap-${capNum}`);
+      const img     = document.getElementById(`cap-img-${capNum}`);
+      img.src = `/static/${data.path}`;
+      imgWrap.style.display = 'block';
+
+      // Spoof flag
+      if (data.spoof) {
+        document.getElementById(`cap-spoof-${capNum}`).style.display = 'block';
+      }
+
+      if (data.complete || capNum === 3) {
+        onComplete();
+      }
+    } else {
+      console.error('Capture error:', data.error);
+      captured.delete(capNum);  // allow retry
+    }
+  } catch (err) {
+    console.error('Network error:', err);
+    captured.delete(capNum);
+  }
+}
+
+// ── Completion ─────────────────────────────────────────────────────────
+function onComplete() {
+  done = true;
+  clearInterval(checkInterval);
+
+  document.getElementById('complete-banner').style.display = 'block';
+  document.getElementById('status-badge').className = 'badge-status bs-completed';
+  document.getElementById('status-badge').innerHTML = '<i class="bi bi-check2-circle"></i> Complete';
+  document.getElementById('countdown-card').style.display = 'none';
+
+  if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+
+  // Enable report link after 3s (allow server to finish saving)
+  setTimeout(() => {
+    const link = document.getElementById('report-link');
+    link.style.pointerEvents = 'auto';
+    link.style.opacity = '1';
+  }, 3000);
+}
+
+// ── Polling loop ───────────────────────────────────────────────────────
+function tick() {
+  if (done) return;
+  const elapsed = (Date.now() - startTime) / 1000;
+
+  // Update countdown
+  let nextIn = null;
+  for (let i = 0; i < SCHEDULE.length; i++) {
+    const capNum = i + 1;
+    if (!captured.has(capNum)) {
+      nextIn = Math.max(0, SCHEDULE[i] - elapsed);
+      break;
+    }
+  }
+  if (nextIn !== null) {
+    document.getElementById('countdown-num').textContent  = Math.ceil(nextIn);
+    document.getElementById('countdown-label').textContent = nextIn > 0 ? 'NEXT CAPTURE IN' : 'CAPTURING NOW...';
+  }
+
+  // Trigger captures
+  for (let i = 0; i < SCHEDULE.length; i++) {
+    const capNum = i + 1;
+    if (!captured.has(capNum) && elapsed >= SCHEDULE[i]) {
+      sendCapture(capNum);
+    }
+  }
+}
+
+// ── Elapsed timer ──────────────────────────────────────────────────────
+function updateElapsed() {
+  const s   = Math.floor((Date.now() - startTime) / 1000);
+  const mm  = String(Math.floor(s / 60)).padStart(2,'0');
+  const ss  = String(s % 60).padStart(2,'0');
+  document.getElementById('elapsed-timer').textContent = `${mm}:${ss}`;
+}
+
+// ── Restore state from server (page refresh) ──────────────────────────
+async function restoreState() {
+  try {
+    const r    = await fetch(`/api/lecture/${LID}/status`);
+    const data = await r.json();
+    if (data.status === 'not_found') return;
+
+    // Restore elapsed offset
+    startTime = Date.now() - (data.elapsed * 1000);
+
+    // Restore existing captures
+    for (const [capStr, capData] of Object.entries(data.captures || {})) {
+      const capNum = parseInt(capStr);
+      captured.add(capNum);
+      const circle = document.getElementById(`cap-circle-${capNum}`);
+      circle.classList.remove('active');
+      circle.classList.add('done');
+      if (capNum < 3) document.getElementById(`cap-line-${capNum}`).classList.add('done');
+
+      document.getElementById(`cap-result-${capNum}`).style.opacity = '1';
+      const namesDiv = document.getElementById(`cap-names-${capNum}`);
+      namesDiv.innerHTML = capData.names.length
+        ? capData.names.map(n=>`<span class="name-pill"><i class="bi bi-person-check"></i>${n}</span>`).join('')
+        : '<span style="color:var(--text-muted);font-size:12px;">No faces detected</span>';
+
+      if (capData.path) {
+        document.getElementById(`cap-img-${capNum}`).src = `/static/${capData.path}`;
+        document.getElementById(`cap-img-wrap-${capNum}`).style.display = 'block';
+      }
+    }
+
+    if (data.complete) { onComplete(); return; }
+  } catch (e) { /* ignore */ }
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────
+(async () => {
+  await initCamera();
+  await restoreState();
+  if (!done) {
+    checkInterval   = setInterval(tick, 500);
+    elapsedInterval = setInterval(updateElapsed, 1000);
+  }
+})();
+</script>
+{% endblock %}

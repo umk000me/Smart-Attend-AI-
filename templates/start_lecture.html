@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Start Lecture — SmartAttend{% endblock %}
+{% block page_label %}Start Lecture{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-play-circle-fill text-teal me-2"></i>Start <span>Lecture</span></h1>
+  <p>Configure your lecture session. The AI camera system will activate automatically.</p>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-camera-video-fill me-2 text-teal"></i>Lecture Configuration
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="mb-4">
+            <label class="form-label">SUBJECT</label>
+            <select name="subject" class="form-select form-select-lg" required>
+              {% for s in subjects %}
+              <option value="{{ s }}">{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">ROOM / LAB</label>
+            <input type="text" name="room" class="form-control" value="Lab-1" placeholder="e.g. Room 204">
+          </div>
+
+          <!-- Workflow diagram -->
+          <div class="card mb-4" style="background:rgba(0,219,180,.04); border-color:rgba(0,219,180,.15);">
+            <div class="card-body py-3 px-4">
+              <div class="section-label mb-3">CAPTURE WORKFLOW</div>
+              <div class="cap-timeline">
+                <div class="cap-node">
+                  <div class="cap-circle" style="border-color:var(--teal); color:var(--teal);">1</div>
+                  <div class="cap-label">0s<br><span style="color:var(--text-muted);">Start</span></div>
+                </div>
+                <div class="cap-line"></div>
+                <div class="cap-node">
+                  <div class="cap-circle" style="border-color:var(--teal); color:var(--teal);">2</div>
+                  <div class="cap-label">20s<br><span style="color:var(--text-muted);">Mid</span></div>
+                </div>
+                <div class="cap-line"></div>
+                <div class="cap-node">
+                  <div class="cap-circle" style="border-color:var(--teal); color:var(--teal);">3</div>
+                  <div class="cap-label">40s<br><span style="color:var(--text-muted);">End</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Attendance Logic -->
+          <div class="card mb-4" style="background:rgba(0,0,0,.3); border-color:var(--border);">
+            <div class="card-body py-3 px-4">
+              <div class="section-label mb-2">ATTENDANCE LOGIC</div>
+              <div class="d-flex flex-column gap-2" style="font-size:12.5px;">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge-status bs-present">Present</span>
+                  <span style="color:var(--text-sec);">Detected in 2 or 3 captures</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge-status bs-late">Late</span>
+                  <span style="color:var(--text-sec);">Only detected in capture 3</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge-status bs-early">Early Exit</span>
+                  <span style="color:var(--text-sec);">Present in 1 & 2, missing in 3</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge-status bs-absent">Absent</span>
+                  <span style="color:var(--text-sec);">Not detected in any capture</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-teal w-100 justify-content-center" style="padding:14px; font-size:15px;">
+            <i class="bi bi-camera-video-fill"></i> Activate Camera & Start Lecture
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Tips card -->
+    <div class="card" style="background:rgba(0,0,0,.2);">
+      <div class="card-header">
+        <i class="bi bi-lightbulb-fill me-2" style="color:var(--amber);"></i>System Notes
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled d-flex flex-column gap-3" style="font-size:13px; color:var(--text-sec);">
+          <li class="d-flex gap-2">
+            <i class="bi bi-check2 text-teal flex-shrink-0 mt-1"></i>
+            Browser will request webcam permission. Allow it for best results.
+          </li>
+          <li class="d-flex gap-2">
+            <i class="bi bi-check2 text-teal flex-shrink-0 mt-1"></i>
+            In demo mode (no <code>face_recognition</code>), random students are simulated from the database.
+          </li>
+          <li class="d-flex gap-2">
+            <i class="bi bi-check2 text-teal flex-shrink-0 mt-1"></i>
+            All captured images are saved to <code>static/captured_images/</code>.
+          </li>
+          <li class="d-flex gap-2">
+            <i class="bi bi-check2 text-teal flex-shrink-0 mt-1"></i>
+            Attendance is auto-computed after capture 3 completes.
+          </li>
+          <li class="d-flex gap-2">
+            <i class="bi bi-shield-fill-check text-cyan flex-shrink-0 mt-1"></i>
+            Anti-spoofing checks for identical static frames.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

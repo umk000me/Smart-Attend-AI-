@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Student Enrollment — SmartAttend{% endblock %}
+{% block page_label %}Student Enrollment{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-person-bounding-box text-teal me-2"></i>Student <span>Enrollment</span></h1>
+  <p>Register students and capture their facial embeddings for recognition.</p>
+</div>
+
+<div class="row g-4">
+  <!-- ── Enroll Form ──────────────────────────────────────────────────── -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-person-plus-fill me-2 text-teal"></i>New Student Registration
+      </div>
+      <div class="card-body">
+        <form method="POST" id="enroll-form">
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="face_image" id="face-image-data">
+
+          <div class="mb-3">
+            <label class="form-label">FULL NAME</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Aarav Singh" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">ROLL NUMBER</label>
+            <input type="text" name="roll_no" class="form-control" placeholder="e.g. CS2413" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">DEPARTMENT</label>
+            <select name="department" class="form-select">
+              <option>Computer Science</option>
+              <option>Electronics</option>
+              <option>Mechanical</option>
+              <option>Civil</option>
+              <option>Information Technology</option>
+            </select>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Face Capture Section -->
+          <div class="mb-3">
+            <label class="form-label">FACE CAPTURE <span style="color:var(--text-muted);">(optional but recommended)</span></label>
+
+            <div class="face-video-wrap mb-2" id="cam-wrap" style="display:none;">
+              <video id="cam-video" autoplay playsinline muted style="width:100%; max-height:260px; display:block;"></video>
+              <div class="face-scanner"><div class="scan-line"></div></div>
+              <div class="cam-overlay">FACE CAPTURE MODE</div>
+            </div>
+
+            <canvas id="face-canvas" style="display:none;"></canvas>
+
+            <div id="face-preview" style="display:none; margin-bottom:10px;">
+              <img id="face-preview-img" style="width:100%; border-radius:10px; border:2px solid var(--teal);" alt="Captured face">
+              <div class="mt-1" style="font-size:11px; color:var(--teal); font-family:'IBM Plex Mono',monospace;">
+                <i class="bi bi-check-circle-fill"></i> Face captured — encoding will be generated on save
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="button" class="btn-ghost" id="btn-start-cam" onclick="startCam()">
+                <i class="bi bi-camera-fill"></i> Open Camera
+              </button>
+              <button type="button" class="btn-teal" id="btn-capture" onclick="captureFrame()" style="display:none;">
+                <i class="bi bi-camera-fill"></i> Capture Face
+              </button>
+              <button type="button" class="btn-ghost" id="btn-recapture" onclick="recapture()" style="display:none;">
+                <i class="bi bi-arrow-counterclockwise"></i> Retry
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-teal w-100 justify-content-center mt-2" style="padding:11px;">
+            <i class="bi bi-person-check-fill"></i> Register Student
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Students Table ─────────────────────────────────────────────── -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-table me-2 text-teal"></i>Enrolled Students</span>
+        <span class="font-mono" style="font-size:11px; color:var(--text-sec);">
+          {{ students|length }} total
+        </span>
+      </div>
+      <div class="card-body p-0" style="max-height:620px; overflow-y:auto;">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>ROLL NO</th>
+              <th>NAME</th>
+              <th>DEPT</th>
+              <th>FACE</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+            <tr>
+              <td class="font-mono text-teal">{{ s.roll_no }}</td>
+              <td class="fw-600">{{ s.name }}</td>
+              <td style="color:var(--text-sec); font-size:12px;">{{ s.department or '—' }}</td>
+              <td>
+                {% if s.encoding_blob %}
+                  <span class="badge-status bs-present">
+                    <i class="bi bi-check-circle"></i> Encoded
+                  </span>
+                {% elif s.photo_path %}
+                  <span class="badge-status bs-late">
+                    <i class="bi bi-image"></i> Photo only
+                  </span>
+                {% else %}
+                  <span class="badge-status bs-absent">
+                    <i class="bi bi-x-circle"></i> None
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  {% if s.photo_path and not s.encoding_blob %}
+                  <form method="POST" style="display:inline;">
+                    <input type="hidden" name="action" value="encode">
+                    <input type="hidden" name="sid" value="{{ s.id }}">
+                    <button type="submit" class="btn-ghost" style="font-size:11px; padding:3px 9px;" title="Re-encode face">
+                      <i class="bi bi-cpu"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                  <form method="POST" onsubmit="return confirm('Delete student {{ s.name }}?')">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="sid" value="{{ s.id }}">
+                    <button type="submit" class="btn-danger-soft" style="font-size:11px; padding:3px 9px;">
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-5" style="color:var(--text-muted);">
+                <i class="bi bi-person-x fs-3 d-block mb-2"></i>
+                No students enrolled yet
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Reload faces button -->
+    <div class="mt-3 text-end">
+      <button onclick="reloadFaces()" class="btn-ghost">
+        <i class="bi bi-arrow-clockwise"></i> Reload Face Engine
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let stream = null;
+
+async function startCam() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width:640, height:480 }, audio: false });
+    const video = document.getElementById('cam-video');
+    video.srcObject = stream;
+    document.getElementById('cam-wrap').style.display = 'block';
+    document.getElementById('btn-start-cam').style.display = 'none';
+    document.getElementById('btn-capture').style.display = 'inline-flex';
+    document.getElementById('face-preview').style.display = 'none';
+  } catch (err) {
+    alert('Camera access denied: ' + err.message);
+  }
+}
+
+function captureFrame() {
+  const video  = document.getElementById('cam-video');
+  const canvas = document.getElementById('face-canvas');
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+  document.getElementById('face-image-data').value = dataUrl;
+  document.getElementById('face-preview-img').src = dataUrl;
+  document.getElementById('face-preview').style.display = 'block';
+  document.getElementById('cam-wrap').style.display = 'none';
+  document.getElementById('btn-capture').style.display = 'none';
+  document.getElementById('btn-recapture').style.display = 'inline-flex';
+
+  // Stop camera
+  if (stream) stream.getTracks().forEach(t => t.stop());
+}
+
+function recapture() {
+  document.getElementById('face-preview').style.display = 'none';
+  document.getElementById('btn-recapture').style.display = 'none';
+  document.getElementById('btn-start-cam').style.display = 'inline-flex';
+  document.getElementById('face-image-data').value = '';
+  if (stream) stream.getTracks().forEach(t => t.stop());
+}
+
+async function reloadFaces() {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Reloading...';
+  try {
+    const r = await fetch('/api/reload_faces', { method:'POST' });
+    const d = await r.json();
+    btn.innerHTML = `<i class="bi bi-check-circle-fill" style="color:var(--teal)"></i> ${d.count} faces loaded`;
+    setTimeout(() => {
+      btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Reload Face Engine';
+      btn.disabled = false;
+    }, 3000);
+  } catch (e) {
+    btn.innerHTML = '<i class="bi bi-x-circle"></i> Error';
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

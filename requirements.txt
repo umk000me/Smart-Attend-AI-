@@ -1,0 +1,11 @@
+Flask==3.0.0
+Werkzeug==3.0.1
+opencv-python==4.9.0.80
+numpy==1.26.3
+Pillow==10.2.0
+
+# Face recognition (requires cmake + dlib — see README if install fails)
+face_recognition==1.3.0
+
+# Optional: if face_recognition install fails, the app runs in DEMO MODE
+# using Haar cascades with simulated student names. All other features work.

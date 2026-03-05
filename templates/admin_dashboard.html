@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — SmartAttend{% endblock %}
+{% block page_label %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-grid-1x2-fill text-teal me-2"></i>Admin <span>Dashboard</span></h1>
+  <p>System overview — {{ now.strftime('%A, %d %B %Y') if now else '' }}</p>
+</div>
+
+<!-- ── Stat Cards ────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-people-fill"></i></div>
+      <div>
+        <div class="stat-val">{{ stu_cnt }}</div>
+        <div class="stat-label">Enrolled Students</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon cyan"><i class="bi bi-person-badge-fill"></i></div>
+      <div>
+        <div class="stat-val">{{ faculty|length }}</div>
+        <div class="stat-label">Faculty Members</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon purple"><i class="bi bi-camera-video-fill"></i></div>
+      <div>
+        <div class="stat-val">{{ lec_cnt }}</div>
+        <div class="stat-label">Total Lectures</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon {% if active_cnt > 0 %}amber{% else %}teal{% endif %}">
+        <i class="bi bi-broadcast"></i>
+      </div>
+      <div>
+        <div class="stat-val">{{ active_cnt }}</div>
+        <div class="stat-label">Live Lectures Now</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Today Summary & Faculty ──────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <!-- Today attendance summary -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-calendar-check me-2 text-teal"></i>Today's Attendance</span>
+        <span class="badge-status bs-active font-mono" style="font-size:10px;">
+          {{ today_lec|length }} lectures
+        </span>
+      </div>
+      <div class="card-body">
+        {% set present = att_map.get('Present',0) %}
+        {% set late    = att_map.get('Late',0) %}
+        {% set early   = att_map.get('Early Exit',0) %}
+        {% set absent  = att_map.get('Absent',0) %}
+        {% set total   = present+late+early+absent %}
+
+        {% if total > 0 %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <small class="text-dim">Attendance Rate</small>
+            <small class="font-mono text-teal">{{ '%.1f'|format((present+late+early)/total*100) }}%</small>
+          </div>
+          <div class="prog-wrap">
+            <div class="prog-bar" style="width:{{ (present+late+early)/total*100 }}%"></div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex flex-column gap-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="badge-status bs-present"><i class="bi bi-check-circle"></i> Present</span>
+            <span class="fw-700 font-mono">{{ present }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="badge-status bs-late"><i class="bi bi-clock"></i> Late</span>
+            <span class="fw-700 font-mono">{{ late }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="badge-status bs-early"><i class="bi bi-box-arrow-left"></i> Early Exit</span>
+            <span class="fw-700 font-mono">{{ early }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="badge-status bs-absent"><i class="bi bi-x-circle"></i> Absent</span>
+            <span class="fw-700 font-mono">{{ absent }}</span>
+          </div>
+        </div>
+
+        {% if total == 0 %}
+        <div class="text-center py-3" style="color:var(--text-muted);">
+          <i class="bi bi-moon-stars-fill fs-3"></i>
+          <div class="mt-2" style="font-size:12px;">No attendance recorded today</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Faculty list -->
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people-fill me-2 text-teal"></i>Faculty Members</span>
+        <a href="{{ url_for('add_faculty') }}" class="btn-teal" style="font-size:12px; padding:5px 12px;">
+          <i class="bi bi-plus"></i> Add Faculty
+        </a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table-custom w-100">
+          <thead>
+            <tr>
+              <th>NAME</th>
+              <th>EMAIL</th>
+              <th>SUBJECT</th>
+              <th>DEPT</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in faculty %}
+            <tr>
+              <td class="fw-600">{{ f.name }}</td>
+              <td class="font-mono" style="font-size:12px;">{{ f.email }}</td>
+              <td><span class="badge-status bs-active">{{ f.subject or '—' }}</span></td>
+              <td style="color:var(--text-sec);">{{ f.department or '—' }}</td>
+              <td>
+                <a href="{{ url_for('add_faculty') }}" class="btn-ghost" style="font-size:11px; padding:3px 10px;">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-4" style="color:var(--text-muted);">
+                No faculty added yet
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Today's Lectures ──────────────────────────────────────────────── -->
+<div class="card mb-4">
+  <div class="card-header">
+    <i class="bi bi-calendar-event me-2 text-teal"></i>Today's Lectures
+  </div>
+  <div class="card-body p-0">
+    {% if today_lec %}
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>SUBJECT</th><th>FACULTY</th><th>START</th><th>ROOM</th><th>STATUS</th><th>ACTION</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lec in today_lec %}
+        <tr>
+          <td class="fw-600">{{ lec.subject }}</td>
+          <td>{{ lec.fname }}</td>
+          <td class="font-mono">{{ lec.start_time }}</td>
+          <td>{{ lec.room or 'Lab-1' }}</td>
+          <td>
+            <span class="badge-status {{ 'bs-active' if lec.status=='active' else 'bs-completed' }}">
+              <i class="bi bi-{% if lec.status=='active' %}broadcast{% else %}check2-circle{% endif %}"></i>
+              {{ lec.status|title }}
+            </span>
+          </td>
+          <td>
+            {% if lec.status == 'completed' %}
+            <a href="{{ url_for('attendance_report', lid=lec.id) }}" class="btn-ghost" style="font-size:11px; padding:3px 10px;">
+              <i class="bi bi-eye"></i> Report
+            </a>
+            {% else %}
+            <span style="color:var(--text-muted); font-size:12px;">In progress</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-4" style="color:var(--text-muted);">
+      <i class="bi bi-calendar-x fs-3"></i>
+      <div class="mt-2">No lectures scheduled for today</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3">
+  <div class="col-md-3">
+    <a href="{{ url_for('add_student') }}" class="card d-block text-decoration-none p-3" style="background:rgba(0,219,180,.06); border-color:rgba(0,219,180,.2);">
+      <i class="bi bi-person-plus-fill fs-4 text-teal"></i>
+      <div class="fw-700 mt-2">Enroll Student</div>
+      <div style="font-size:12px; color:var(--text-sec);">Add & capture face</div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="{{ url_for('add_faculty') }}" class="card d-block text-decoration-none p-3" style="background:rgba(0,200,232,.05); border-color:rgba(0,200,232,.2);">
+      <i class="bi bi-person-workspace fs-4 text-cyan"></i>
+      <div class="fw-700 mt-2">Add Faculty</div>
+      <div style="font-size:12px; color:var(--text-sec);">Assign subjects & roles</div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="{{ url_for('all_reports') }}" class="card d-block text-decoration-none p-3" style="background:rgba(155,89,182,.05); border-color:rgba(155,89,182,.2);">
+      <i class="bi bi-file-bar-graph-fill fs-4" style="color:var(--purple);"></i>
+      <div class="fw-700 mt-2">View Reports</div>
+      <div style="font-size:12px; color:var(--text-sec);">All lecture records</div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="{{ url_for('admin_analytics') }}" class="card d-block text-decoration-none p-3" style="background:rgba(245,166,35,.05); border-color:rgba(245,166,35,.2);">
+      <i class="bi bi-graph-up-arrow fs-4" style="color:var(--amber);"></i>
+      <div class="fw-700 mt-2">Analytics</div>
+      <div style="font-size:12px; color:var(--text-sec);">Risk & predictions</div>
+    </a>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// Inject current date for template
+// (Handled server-side via datetime import)
+</script>
+{% endblock %}
