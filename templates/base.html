@@ -25,7 +25,7 @@
 
     <nav class="sb-nav">
       {% if session.role == 'super_admin' %}
-        <div class="sb-section">ADMINISTRATION</div>
+        <div class="sb-section">ADMINISTRATION </div>
         <a href="{{ url_for('admin_dashboard') }}" class="sb-link {% if request.endpoint=='admin_dashboard' %}active{% endif %}">
           <i class="bi bi-grid-1x2-fill"></i> Dashboard
         </a>
@@ -35,7 +35,7 @@
         <a href="{{ url_for('add_student') }}" class="sb-link {% if request.endpoint=='add_student' %}active{% endif %}">
           <i class="bi bi-person-bounding-box"></i> Student Enrollment
         </a>
-        <div class="sb-section" style="margin-top:8px;">REPORTS</div>
+        <div class="sb-section" style="margin-top:8px;">REPORTS </div>
         <a href="{{ url_for('all_reports') }}" class="sb-link {% if request.endpoint=='all_reports' %}active{% endif %}">
           <i class="bi bi-file-bar-graph-fill"></i> All Reports
         </a>
@@ -48,11 +48,11 @@
           <i class="bi bi-grid-1x2-fill"></i> Dashboard
         </a>
         <a href="{{ url_for('start_lecture') }}" class="sb-link {% if request.endpoint in ['start_lecture','lecture_monitor'] %}active{% endif %}">
-          <i class="bi bi-play-circle-fill"></i> Start Lecture
+          <i class="bi bi-play-circle-fill"></i> Start Lecture 
         </a>
         <a href="{{ url_for('faculty_analytics') }}" class="sb-link {% if request.endpoint=='faculty_analytics' %}active{% endif %}">
-          <i class="bi bi-graph-up-arrow"></i> Analytics
-        </a>
+          <i class="bi bi-graph-up-arrow"></i> Analytics 
+         </a> 
       {% endif %}
     </nav>
 
