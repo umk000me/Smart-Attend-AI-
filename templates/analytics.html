@@ -27,7 +27,7 @@
   <div class="card-body d-flex align-items-center gap-3">
     <i class="bi bi-exclamation-triangle-fill fs-4" style="color:var(--red); flex-shrink:0;"></i>
     <div>
-      <div class="fw-700" style="color:var(--red);">{{ at_risk|length }} Student(s) Below 75% Threshold</div>
+      <div class="fw-700" style="color:var(--red);">{{ at_risk|length }} Student(s) Below 75% Threshold </div>
       <div style="font-size:12px; color:var(--text-sec);">
         {{ at_risk | map(attribute='name') | join(', ') }}
       </div>
@@ -45,7 +45,7 @@
           <i class="bi bi-speedometer2 fs-3 text-teal"></i>
           <div>
             <div class="fw-700">Velocity Index</div>
-            <div style="font-size:12px; color:var(--text-sec);">This week's attended − last week's. Positive = improving.</div>
+            <div style="font-size:12px; color:var(--text-sec);">This week's attended − last week's. Positive = improving. </div>
           </div>
         </div>
       </div>
@@ -58,7 +58,7 @@
           <i class="bi bi-hourglass-split fs-3" style="color:var(--red);"></i>
           <div>
             <div class="fw-700">Risk Countdown</div>
-            <div style="font-size:12px; color:var(--text-sec);">Max lectures student can miss before dropping below 75%.</div>
+            <div style="font-size:12px; color:var(--text-sec);">Max lectures student can miss before dropping below 75%. </div>
           </div>
         </div>
       </div>
@@ -71,7 +71,7 @@
           <i class="bi bi-graph-up fs-3 text-cyan"></i>
           <div>
             <div class="fw-700">Predicted %</div>
-            <div style="font-size:12px; color:var(--text-sec);">Linear projection of semester-end attendance percentage.</div>
+            <div style="font-size:12px; color:var(--text-sec);"> Linear projection of semester-end attendance percentage. </div>
           </div>
         </div>
       </div>
@@ -90,12 +90,12 @@
     <table class="table-custom" id="ana-table">
       <thead>
         <tr>
-          <th>STUDENT</th>
-          <th>TOTAL</th>
-          <th>PRESENT</th>
-          <th>LATE</th>
-          <th>EARLY EXIT</th>
-          <th>ABSENT</th>
+          <th>STUDENT </th>
+          <th>TOTAL </th>
+          <th>PRESENT </th>
+          <th>LATE </th>
+          <th>EARLY EXIT </th>
+          <th>ABSENT </th>
           <th>ATTEND %</th>
           <th title="Velocity Index">VELOCITY</th>
           <th title="Risk Countdown">RISK</th>
