@@ -42,6 +42,7 @@ body {
   color: var(--text-pri);
   min-height: 100vh;
   overflow-x: hidden;
+   
 }
 
 /* Noise texture overlay */
@@ -76,6 +77,7 @@ code, .mono     { font-family:'IBM Plex Mono',monospace; }
   top: 0; left: 0; bottom: 0;
   z-index: 1000;
   transition: transform var(--transition);
+   
 }
 
 .sb-brand {
