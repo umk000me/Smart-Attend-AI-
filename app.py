@@ -147,7 +147,8 @@ def init_db():
     );
     """)
 
-    # Seed only if no admin exists
+  
+  # Seed only if no admin exists
     existing = cur.execute(
         "SELECT id FROM users WHERE role='super_admin'"
     ).fetchone()
@@ -215,6 +216,7 @@ def _seed_demo_data(cur):
             (faculty_id, subject, day_of_week, start_time, end_time)
             VALUES (?,?,?,?,?)
         """, (fid, subj, day, st, et))
+      
 
     # ── Attendance History (4 weeks) ────────────────────────────────────────
     today = date.today()
