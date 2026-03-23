@@ -9,6 +9,7 @@ Demo logins:
   Faculty      →  priya@smart.edu   / faculty123
                →  rahul@smart.edu   / faculty123
 """
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  IMPORTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,6 +52,7 @@ CAPTURE_SCHEDULE = [0, 20, 40]
 os.makedirs(STUDENT_IMAGES_DIR, exist_ok=True)
 os.makedirs(CAPTURED_DIR,       exist_ok=True)
 
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  IN-MEMORY STORES
 # ─────────────────────────────────────────────────────────────────────────────
@@ -69,7 +71,6 @@ def get_db() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
-
 
 def init_db():
     """Create all tables and seed demo data on first run."""
